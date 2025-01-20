@@ -9,4 +9,6 @@ public interface ClientService {
     SignupResponseDTO signup(SignupRequestDTO signupRequest, String ipAddress) throws Exception;
 
     LoginResponseDTO login(LoginRequestDTO loginRequest, String ipAddress) throws Exception;
+
+    public String getHello();
 }

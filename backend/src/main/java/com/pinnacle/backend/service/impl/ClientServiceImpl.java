@@ -45,6 +45,7 @@ public class ClientServiceImpl implements ClientService {
         clientRepo.save(client);
 
         SignupResponseDTO response = new SignupResponseDTO();
+        response.setUserName(client.getUserName());
         response.setMemId(client.getMemId());
         response.setApiKey(client.getApiKey());
 
@@ -73,5 +74,10 @@ public class ClientServiceImpl implements ClientService {
         response.setLastLogin(client.getLastLogin());
 
         return response;
+    }
+
+    @Override
+    public String getHello() {
+        return "Hello, Pinnacle!!";
     }
 }
