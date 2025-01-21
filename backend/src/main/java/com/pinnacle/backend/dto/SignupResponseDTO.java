@@ -12,4 +12,5 @@ public class SignupResponseDTO {
     private Long memId;
     private String apiKey;
     private String userName;
+    
 }

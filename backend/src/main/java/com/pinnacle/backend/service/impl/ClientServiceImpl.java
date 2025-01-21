@@ -80,4 +80,5 @@ public class ClientServiceImpl implements ClientService {
     public String getHello() {
         return "Hello, Pinnacle!!";
     }
+
 }

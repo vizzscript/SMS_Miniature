@@ -1,5 +1,7 @@
 package com.pinnacle.backend.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,4 +12,6 @@ public interface ClientRepository extends JpaRepository<ClientModel, Long> {
     public boolean existsByUserName(String userName);
 
     public ClientModel findByUserName(String userName);
+    Optional<ClientModel> findByApiKey(String apiKey);
+
 }

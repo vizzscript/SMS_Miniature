@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { signup } from '../services/apiService';
-// import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Toast from './Toast'; // Import the Toast component
 
 const SignupForm = () => {
@@ -10,7 +10,7 @@ const SignupForm = () => {
     });
     const [showToast, setShowToast] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
-    // const navigate = useNavigate();
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -23,9 +23,9 @@ const SignupForm = () => {
             const response = await signup(formData);
             setToastMessage(`Signup successful! Welcome, ${response.userName}.`); // Customize the message
             setShowToast(true);
-            // setTimeout(() => {
-            //     navigate('/login'); // Redirect to Login page after 3 seconds
-            // });
+            setTimeout(() => {
+                navigate('/login'); // Redirect to Login page after 3 seconds
+            },3000);
         } catch (error) {
             setToastMessage('Signup failed. Please try again.',error);
             setShowToast(true);

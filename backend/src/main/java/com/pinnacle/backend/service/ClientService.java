@@ -11,4 +11,5 @@ public interface ClientService {
     LoginResponseDTO login(LoginRequestDTO loginRequest, String ipAddress) throws Exception;
 
     public String getHello();
+
 }
