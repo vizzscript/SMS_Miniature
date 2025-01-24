@@ -7,8 +7,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -20,6 +22,7 @@ public class ClientModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long memId;
 
+    @Getter
     @Column(length = 50, nullable = false)
     private String userName;
 
@@ -27,15 +30,15 @@ public class ClientModel {
     private String pwd; // Ensure this is hashed before storage
 
     @Column(nullable = false)
-    private Boolean status; // Active/inactive status
+    private Boolean status; // For active/inactive status
 
     @Column(nullable = false)
     private Instant createdAt;
 
-    private String ipLogin; // Can be nullable for signup
+    private String ipLogin; // Nullable, no need for annotation
 
-    @Column(length = 255, unique = true)
-    private String apiKey; // Ensure this is securely generated
+    @Column(unique = true)
+    private String apiKey;
 
-    private Instant lastLogin; // Track last login time
+    private Instant lastLogin; // Nullable, no need for annotation
 }

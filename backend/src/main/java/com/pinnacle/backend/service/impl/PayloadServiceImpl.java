@@ -33,7 +33,7 @@ public class PayloadServiceImpl implements PayloadService {
                 .orElseThrow(() -> new UnAuthorizedException("Invalid API Key"));
 
         // Validate username and password
-        if (!client.getUserName().equals(payloadRequest.getUsername())) {
+        if (!client.getUserName().equals(payloadRequest.getUserName())) {
             throw new UnAuthorizedException("Invalid username");
         }
 
