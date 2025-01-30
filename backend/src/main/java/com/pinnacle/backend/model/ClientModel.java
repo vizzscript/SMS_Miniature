@@ -41,4 +41,6 @@ public class ClientModel {
     private String apiKey;
 
     private Instant lastLogin; // Nullable, no need for annotation
+
+    private Double smsBalance;
 }

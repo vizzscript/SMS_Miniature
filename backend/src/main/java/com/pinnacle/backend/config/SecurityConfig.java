@@ -21,6 +21,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/client/login").permitAll() // Allow access to /client/login
                 .requestMatchers(HttpMethod.GET, "/client/hello").permitAll() // Allow access to /client/hello
                 .requestMatchers(HttpMethod.POST, "/client/payload/save").permitAll() // Allow access to /client/payload/save
+                .requestMatchers(HttpMethod.POST, "/packet/save").permitAll() // Allow access to /packet/save
                 .anyRequest().authenticated() // Secure all other endpoints
             )
             .httpBasic(Customizer.withDefaults()) // Use HTTP Basic authentication with default settings
