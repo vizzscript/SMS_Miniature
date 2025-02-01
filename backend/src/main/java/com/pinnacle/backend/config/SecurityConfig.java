@@ -17,11 +17,16 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults()) // Enable CORS with default configuration
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests
-                .requestMatchers(HttpMethod.POST, "/client/signup").permitAll() // Allow access to /client/signup
-                .requestMatchers(HttpMethod.POST, "/client/login").permitAll() // Allow access to /client/login
-                .requestMatchers(HttpMethod.GET, "/client/hello").permitAll() // Allow access to /client/hello
-                .requestMatchers(HttpMethod.POST, "/client/payload/save").permitAll() // Allow access to /client/payload/save
-                .requestMatchers(HttpMethod.POST, "/packet/save").permitAll() // Allow access to /packet/save
+
+                .requestMatchers(HttpMethod.POST, "/**").permitAll() // Allow all POST requests
+
+                // .requestMatchers(HttpMethod.POST, "/client/login").permitAll() // Allow access to /client/login
+
+                .requestMatchers(HttpMethod.GET, "/**").permitAll() // Allow all GET requests
+                
+                // .requestMatchers(HttpMethod.POST, "/client/payload/save").permitAll() // Allow access to /client/payload/save
+                // .requestMatchers(HttpMethod.POST, "/packet/save").permitAll() // Allow access to /packet/save
+
                 .anyRequest().authenticated() // Secure all other endpoints
             )
             .httpBasic(Customizer.withDefaults()) // Use HTTP Basic authentication with default settings

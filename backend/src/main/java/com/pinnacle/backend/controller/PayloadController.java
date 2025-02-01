@@ -3,6 +3,7 @@ package com.pinnacle.backend.controller;
 // import org.slf4j.Logger;
 // import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,25 +34,26 @@ public class PayloadController {
 
     // @PostMapping("/save")
     // public ResponseEntity<String> savePayload(
-    //         @RequestHeader("API-Key") String apiKey,
-    //         @RequestBody PayloadRequest payloadRequest) {
+    // @RequestHeader("API-Key") String apiKey,
+    // @RequestBody PayloadRequest payloadRequest) {
 
-    //         // What I have done in Packet Controller route I need to
-    //         // do same with the PayloadController
+    // // What I have done in Packet Controller route I need to
+    // // do same with the PayloadController
 
-    //     log.info("Incoming Payload Data: {}", payloadRequest);
+    // log.info("Incoming Payload Data: {}", payloadRequest);
 
-    //     if (!rateLimiterService.allowRequest(apiKey)) {
-    //         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Too many requests");
-    //     } else {
-    //         log.info("Request allowed for API Key: {}", apiKey);
-    //     }
-    //     try {
-    //         payloadService.processPayload(apiKey, payloadRequest);
-    //         return ResponseEntity.ok("Payload saved successfully");
-    //     } catch (UnAuthorizedException ex) {
-    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
-    //     }
+    // if (!rateLimiterService.allowRequest(apiKey)) {
+    // return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Too many
+    // requests");
+    // } else {
+    // log.info("Request allowed for API Key: {}", apiKey);
+    // }
+    // try {
+    // payloadService.processPayload(apiKey, payloadRequest);
+    // return ResponseEntity.ok("Payload saved successfully");
+    // } catch (UnAuthorizedException ex) {
+    // return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    // }
     // }
 
     @PostMapping("/save")
@@ -69,7 +71,7 @@ public class PayloadController {
         // Decrypting Incoming encryptedPayload
         String decryptedJsonString = DecryptionUtil.decrypt(encryptedPayload);
 
-        log.info("Decrypted Json String: {}" , decryptedJsonString);
+        log.info("Decrypted Json String: {}", decryptedJsonString);
 
         if (!rateLimiterService.allowRequest(decryptedAPIKey)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Too many requests");
@@ -78,23 +80,41 @@ public class PayloadController {
         }
 
         try {
-            
 
-        // Convert JSON string to PayloadRequest Object
-        ObjectMapper objectMapper = new ObjectMapper();
-        PayloadRequest payloadRequest = objectMapper.readValue(decryptedJsonString, PayloadRequest.class);
-        log.info("Decrypted Payload Data: {}", payloadRequest);
-        System.out.println(payloadRequest);
-        
+            // Convert JSON string to PayloadRequest Object
+            ObjectMapper objectMapper = new ObjectMapper();
+            PayloadRequest payloadRequest = objectMapper.readValue(decryptedJsonString, PayloadRequest.class);
+            log.info("Decrypted Payload Data: {}", payloadRequest);
+            System.out.println(payloadRequest);
+
             // Process the payload
             payloadService.processPayload(decryptedAPIKey, payloadRequest);
 
             return ResponseEntity.ok("Payload saved successfully");
         } catch (UnAuthorizedException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
-        } catch (Exception e){
+        } catch (Exception e) {
             log.error("Error Processing payload.", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred");
         }
     }
+
+    @PostMapping("/accept")
+    public ResponseEntity<String> acceptPayload(@RequestBody String encryptedPayload,
+            @RequestHeader HttpHeaders headers) {
+                
+        try {
+            log.info("Received request to accept payload");
+
+            // Process the payload
+            payloadService.processingPayload(encryptedPayload, headers);
+
+            return ResponseEntity.ok("Payload received and stored successfully.");
+        } catch (Exception e) {
+            log.error("Error accepting payload: ", e);
+            return ResponseEntity.status(500).body("Failed to process payload.");
+        }
+
+    }
+
 }

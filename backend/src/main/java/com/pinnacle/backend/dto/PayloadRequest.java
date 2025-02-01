@@ -12,7 +12,7 @@ public class PayloadRequest {
 
     @Data
     public static class FinalModel {
-        private Long mobileNo;
+        private String mobileNo;
         private String message;
         private String sender;
     }

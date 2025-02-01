@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 public class FinalModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "memId", referencedColumnName = "memId")
@@ -30,7 +30,7 @@ public class FinalModel {
     private String respId;
 
     @Column(nullable = false)
-    private Long mobileNo;
+    private String mobileNo;
 
     @Column(nullable = false)
     private String sender;
