@@ -56,6 +56,7 @@ public class PayloadController {
     // }
     // }
 
+    // Inefficient way to process payload
     @PostMapping("/save")
     public ResponseEntity<String> savePayload(
             @RequestHeader("API-Key") String encryptedAPIKey,
@@ -99,6 +100,8 @@ public class PayloadController {
         }
     }
 
+
+    // Efficient way to process payload
     @PostMapping("/accept")
     public ResponseEntity<String> acceptPayload(@RequestBody String encryptedPayload,
             @RequestHeader HttpHeaders headers) {

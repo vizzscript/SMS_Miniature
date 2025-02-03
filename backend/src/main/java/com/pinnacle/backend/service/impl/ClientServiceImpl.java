@@ -1,6 +1,7 @@
 package com.pinnacle.backend.service.impl;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,14 +55,17 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public LoginResponseDTO login(LoginRequestDTO loginRequest, String ipAddress) throws UserNotFoundException, InvalidPasswordException {
-        ClientModel client = clientRepo.findByUserName(loginRequest.getUserName());
-        if (client == null) {
+        Optional<ClientModel> optionalClient = clientRepo.findByUserName(loginRequest.getUserName());
+        if (!optionalClient.isPresent()) {
             throw new UserNotFoundException("User not found!!");
         }
 
+        ClientModel client = optionalClient.get();
         if (!passwordEncoder.matches(loginRequest.getPwd(), client.getPwd())) {
             throw new InvalidPasswordException("Invalid Password!!");
         }
+
+        
 
         client.setLastLogin(Instant.now());
         client.setIpLogin(ipAddress);
