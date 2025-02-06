@@ -103,20 +103,20 @@ public class PayloadController {
 
     // Efficient way to process payload
     @PostMapping("/accept")
-    public ResponseEntity<String> acceptPayload(@RequestBody String encryptedPayload,
+    public ResponseEntity<?> acceptPayload(@RequestBody String encryptedPayload,
             @RequestHeader HttpHeaders headers) {
                 
-        try {
+        // try {
             log.info("Received request to accept payload");
 
             // Process the payload
-            payloadService.processingPayload(encryptedPayload, headers);
+            return payloadService.processingPayload(encryptedPayload, headers);
 
-            return ResponseEntity.ok("Payload received and stored successfully.");
-        } catch (Exception e) {
-            log.error("Error accepting payload: ", e);
-            return ResponseEntity.status(500).body("Failed to process payload.");
-        }
+            // return ResponseEntity.status(200).body("Everything good looks.");
+        // } catch (Exception e) {
+        //     log.error("Error accepting payload: ", e);
+        //     return ResponseEntity.status(500).body("Failed to process payload.");
+        // }
 
     }
 

@@ -1,6 +1,7 @@
 package com.pinnacle.backend.model;
 
 import java.time.Instant;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,4 +44,9 @@ public class ClientModel {
     private Instant lastLogin; // Nullable, no need for annotation
 
     private Double smsBalance;
+
+    public List<String> getPrivileges() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getPrivileges'");
+    }
 }

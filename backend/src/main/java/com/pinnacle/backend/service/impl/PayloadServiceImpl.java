@@ -1,20 +1,26 @@
 package com.pinnacle.backend.service.impl;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.lang.reflect.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+// import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
-import org.springframework.web.server.ResponseStatusException;
+// import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 // import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,8 +28,10 @@ import com.pinnacle.backend.dto.PayloadRequest;
 import com.pinnacle.backend.exceptions.UnAuthorizedException;
 import com.pinnacle.backend.model.ClientModel;
 import com.pinnacle.backend.model.FinalModel;
+import com.pinnacle.backend.model.PrivilegeModel;
 import com.pinnacle.backend.repository.ClientRepository;
 import com.pinnacle.backend.repository.FinalRepository;
+import com.pinnacle.backend.repository.PrivilegeRepository;
 import com.pinnacle.backend.service.PayloadService;
 import com.pinnacle.backend.service.RateLimiterService;
 import com.pinnacle.backend.util.DecryptionUtil;
@@ -42,20 +50,26 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class PayloadServiceImpl implements PayloadService {
     @Autowired
-    private final ClientRepository clientRepository;
+    private ClientRepository clientRepository;
     @Autowired
-    private final FinalRepository finalRepository;
+    private FinalRepository finalRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
     private RateLimiterService rateLimiterService;
 
     @Autowired
+    private PrivilegeRepository privilegeRepository;
+
+    @Autowired
     private ObjectMapper objectMapper; // For JSON conversion
+
+    private Double smsBal;
+    private Long memId;
 
     // Basic way to process payload
     @Override
-    public void processPayload(String apiKey, PayloadRequest payloadRequest) {
+    public ResponseEntity<?> processPayload(String apiKey, PayloadRequest payloadRequest) {
         // Authenticate via API Key
         ClientModel client = clientRepository.findByApiKey(apiKey)
                 .orElseThrow(() -> new UnAuthorizedException("Invalid API Key"));
@@ -80,11 +94,14 @@ public class PayloadServiceImpl implements PayloadService {
             entity.setReqDateTime(Instant.now());
             finalRepository.save(entity);
         });
+        return ResponseEntity.ok("Everything looks good!");
     }
+
+
 
     // Efficient way to process payload
     @Override
-    public void processingPayload(String encryptedPayload, HttpHeaders headers) {
+    public ResponseEntity<?> processingPayload(String encryptedPayload, HttpHeaders headers) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start(); // Start stopwatch
 
@@ -95,6 +112,13 @@ public class PayloadServiceImpl implements PayloadService {
 
             // Validate Headers
             HeaderValidationUtil.validateHeaders(headers);
+
+            // if(HeaderValidationUtil.validateContentLength(encryptedPayload) != null){
+            // log.error("Request rejected: {} ",
+            // HeaderValidationUtil.validateContentLength(encryptedPayload));
+            // throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid content
+            // length");
+            // }
 
             String isEncrypted = headers.getFirst("isencrypted");
             String decryptedPayload;
@@ -147,12 +171,30 @@ public class PayloadServiceImpl implements PayloadService {
             // Check rate limit
             if (!rateLimiterService.allowRequest(userName)) {
                 log.warn("Rate limit exceeded for UserName: {}", userName);
-                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
-                        "Rate limit exceeded. Try again later.");
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                        .body("Too Many Requests");
             }
 
             ClientModel client = clientRepository.findByUserName(userName)
-                    .orElseThrow(() -> new UnAuthorizedException("Invalid Username"));
+                    .orElse(null);
+
+            if (client == null) {
+                log.warn("Invalid Username: {}", userName);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(
+                                Map.of(
+                                        "status", HttpStatus.UNAUTHORIZED.value(),
+                                        "message", "Invalid Username",
+                                        "timestamp", Instant.now().toString()));
+            }
+
+            memId = client.getMemId();
+            smsBal = client.getSmsBalance();
+
+            Optional<PrivilegeModel> priv = privilegeRepository.findByClient_MemId(memId);
+
+            PrivilegeModel privileges = priv.get();
+            List<String> privilegeList = privileges.getPrivileges();
 
             // Ensure API Key & Username belong to the same record
             if ((decryptedApiKey != null && decryptedApiKey.equals(client.getApiKey())
@@ -166,22 +208,121 @@ public class PayloadServiceImpl implements PayloadService {
                         PasswordValidationUtil.validate(payloadRequest.getPassword());
                     } catch (IllegalArgumentException e) {
                         log.error("Validation failed for username or password in model: {}", payloadRequest, e);
-                        throw new IllegalArgumentException(
-                                "Invalid username or password for payload: " + payloadRequest);
+                        // throw new IllegalArgumentException(
+                        // "Invalid username or password for payload: " + payloadRequest);
+                        ResponseEntity.status(401).body(Map.of(
+                                "status", HttpStatus.UNAUTHORIZED.value(),
+                                "message", "Invalid Username & Password",
+                                "timestamp", Instant.now().toString()));
                     }
                 });
+
                 // Approach 3: Using stream for List of FinalModel dto
-                List<FinalModel> entities = payloadRequest.getPayload().stream()
+                // List<FinalModel> entities = payloadRequest.getPayload().stream()
+                // .map(finalModel -> {
+                // try {
+                // // Validate sender, mobile number, and message for each finalModel data
+                // SenderValidationUtil.validate(finalModel.getSender());
+                // MobileValidationUtil.validate(finalModel.getMobileNo());
+                // MessageValidationUtil.validate(finalModel.getMessage());
+                // // Check if privilegeList is non-null and contains "DEDUCT_BALANCE"
+                // if (privilegeList != null && !privilegeList.isEmpty()
+                // && privilegeList.contains("DEDUCT_BALANCE")) {
+                // smsBal--; // Ensure safe decrement
+                // }
+                // client.setSmsBalance(smsBal);
+                // clientRepository.save(client);
+                // } catch (IllegalArgumentException e) {
+                // log.error("Validation failed for sender, mobile, or message in finalModel:
+                // {}",
+                // finalModel, e);
+                // // throw new IllegalArgumentException("Invalid data in finalModel: " +
+                // // finalModel);
+                // ResponseEntity.status(401).body(Map.of(
+                // "status", HttpStatus.UNAUTHORIZED.value(),
+                // "message", "Invalid Data in final model.",
+                // "timestamp", Instant.now().toString()));
+                // }
+                // FinalModel entity = new FinalModel();
+                // entity.setClient(client);
+                // entity.setSender(finalModel.getSender());
+                // entity.setMobileNo(finalModel.getMobileNo());
+                // entity.setMessage(finalModel.getMessage());
+                // entity.setRespId(UUID.randomUUID().toString());
+                // entity.setReqDateTime(Instant.now());
+                // return entity;
+                // })
+                // .collect(Collectors.toList());
+
+                // finalRepository.saveAll(entities); // Batch save instead of multiple insert
+                // queries
+
+                List<FinalModel> entities;
+                if (payloadRequest.getPayload().size() == 1) {
+                    // Directly process to the database if only one record exists
+                    PayloadRequest.FinalModel finalModel = payloadRequest.getPayload().get(0);
+                    try {
+                        SenderValidationUtil.validate(finalModel.getSender());
+                        MobileValidationUtil.validate(finalModel.getMobileNo());
+                        MessageValidationUtil.validate(finalModel.getMessage());
+
+                        if (privilegeList != null && !privilegeList.isEmpty()
+                                && privilegeList.contains("DEDUCT_BALANCE")) {
+                            smsBal--;
+                        }
+                        client.setSmsBalance(smsBal);
+                        clientRepository.save(client);
+                        FinalModel entity = new FinalModel();
+                        entity.setClient(client);
+                        entity.setSender(finalModel.getSender());
+                        entity.setMobileNo(finalModel.getMobileNo());
+                        entity.setMessage(finalModel.getMessage());
+                        entity.setRespId(UUID.randomUUID().toString());
+                        entity.setReqDateTime(Instant.now());
+
+                        finalRepository.save(entity);
+
+                    } catch (IllegalArgumentException e) {
+                        log.error("Validation failed for sender, mobile or message in finalModel: {}", finalModel, e);
+                        ResponseEntity.status(401).body(Map.of(
+                                "status", HttpStatus.UNAUTHORIZED.value(),
+                                "message", "Invalid Data in final model.",
+                                "timestamp", Instant.now().toString()));
+                    }
+                } else {
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter("payload_data.txt", true))) {
+                        writer.write("Sender || Mobile Number || Message");
+                        writer.newLine();
+                        for (PayloadRequest.FinalModel finalModel : payloadRequest.getPayload()) {
+                            writer.write(finalModel.getSender() + " || " + finalModel.getMobileNo() + " || "
+                                    + finalModel.getMessage());
+                            writer.newLine();
+                        }
+                    } catch (IOException e) {
+                        log.error("Error writing payload data to file.", e);
+                    }
+                }
+                // Process and save to database
+                entities = payloadRequest.getPayload().stream()
                         .map(finalModel -> {
                             try {
-                                // Validate sender, mobile number, and message for each finalModel data
                                 SenderValidationUtil.validate(finalModel.getSender());
                                 MobileValidationUtil.validate(finalModel.getMobileNo());
                                 MessageValidationUtil.validate(finalModel.getMessage());
+
+                                if (privilegeList != null && !privilegeList.isEmpty()
+                                        && privilegeList.contains("DEDUCT_BALANCE")) {
+                                    smsBal--; // Ensure safe decrement
+                                }
+                                client.setSmsBalance(smsBal);
+                                clientRepository.save(client);
                             } catch (IllegalArgumentException e) {
                                 log.error("Validation failed for sender, mobile, or message in finalModel: {}",
                                         finalModel, e);
-                                throw new IllegalArgumentException("Invalid data in finalModel: " + finalModel);
+                                ResponseEntity.status(401).body(Map.of(
+                                        "status", HttpStatus.UNAUTHORIZED.value(),
+                                        "message", "Invalid Data in final model.",
+                                        "timestamp", Instant.now().toString()));
                             }
                             FinalModel entity = new FinalModel();
                             entity.setClient(client);
@@ -194,13 +335,21 @@ public class PayloadServiceImpl implements PayloadService {
                         })
                         .collect(Collectors.toList());
 
-                finalRepository.saveAll(entities); // Batch save instead of multiple insert queries
+                finalRepository.saveAll(entities);
 
-                log.info("Payload successfully stored in database");
-
-            } else {
-                throw new UnAuthorizedException("Invalid API Key or Credentials.");
             }
+
+            log.info("Payload successfully stored in database");
+            return ResponseEntity.status(200).body(Map.of(
+                    "status", 200,
+                    "message", "Payload successfully stored in database.",
+                    "timestamp", Instant.now().toString()));
+
+            // }
+            // else {
+            // // throw new UnAuthorizedException("Invalid API Key or Credentials.");
+            // return ResponseEntity.status(401).body("Invalid API Key or Credentials");
+            // }
 
             // if(decryptedApiKey.equals(client.getApiKey())){
             // System.out.println("Authenticated using apiKey");
@@ -242,11 +391,13 @@ public class PayloadServiceImpl implements PayloadService {
 
         } catch (Exception e) {
             log.error("Error processing payload: ", e);
-            throw new RuntimeException("Failed to process payload", e);
+            // throw new RuntimeException("Failed to process payload", e);
+            return ResponseEntity.status(500).body("Failed to process payload: " + e);
         } finally {
             stopWatch.stop(); // Stop stopwatch
             log.info("Processing time: {} ms", stopWatch.getTotalTimeMillis());
         }
+
     }
 
 }

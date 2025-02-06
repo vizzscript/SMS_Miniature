@@ -1,16 +1,22 @@
 package com.pinnacle.backend.util;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
 public class MobileValidationUtil {
-    public static void validate(String mobileNo) {
+    public static ResponseEntity<?> validate(String mobileNo) {
         if (mobileNo == null || mobileNo.trim().isEmpty()) {
-            throw new IllegalArgumentException("Mobile number cannot be empty.");
+            // throw new IllegalArgumentException("Mobile number cannot be empty.");
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Mobile number cannot be empty.");
         }
 
         String regex = "^(\\+\\d{1,3})?[1-9][0-9]{9}$";
 
         if (!mobileNo.matches(regex)) {
-            throw new IllegalArgumentException("Invalid mobile number format.");
+            // throw new IllegalArgumentException("Invalid mobile number format.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid mobile number format.");
         }
+        return ResponseEntity.ok("Mobile Number is valid!!");
     }
 }
 

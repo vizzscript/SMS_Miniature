@@ -1,10 +1,11 @@
 package com.pinnacle.backend.service;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 
 import com.pinnacle.backend.dto.PayloadRequest;
 
 public interface PayloadService {
-    void processPayload(String apiKey, PayloadRequest payloadRequest);
-    void processingPayload(String payloadRequest, HttpHeaders headers);
+    ResponseEntity<?> processPayload(String apiKey, PayloadRequest payloadRequest);
+    ResponseEntity<?> processingPayload(String payloadRequest, HttpHeaders headers);
 }
