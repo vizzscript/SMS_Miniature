@@ -6327,3 +6327,8 @@ java.lang.IllegalArgumentException: Invalid algorithm type:
 2025-05-27T22:37:59.043+05:30  INFO 168894 --- [backend] [http-nio-8080-exec-9] c.p.b.controller.PayloadController       : Incoming Encrypted API-Key: pWN8SKwDFHenN/NU9R07EyhMGK54eOpxNI9F3RBdUmBOF6MjDBk1RiFV/Z8DPfuC
 2025-05-27T22:37:59.043+05:30  INFO 168894 --- [backend] [http-nio-8080-exec-9] c.p.b.controller.PayloadController       : Decrypted API-Key: f2847cce-197f-4781-afbb-8beec2bb4f67
 2025-05-27T22:37:59.043+05:30  INFO 168894 --- [backend] [http-nio-8080-exec-9] c.p.b.controller.PayloadController       : Decrypted Json String: {"userName":"demoUser","password":"Pass123","payload":[{"sender":"John","mobileNo":"1234567890","message":"Hello there!"},{"sender":"Jane","mobileNo":"9876543210","message":"Hi!"}]}
+2025-05-27T23:00:58.877+05:30  INFO 168894 --- [backend] [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2025-05-27T23:00:58.879+05:30  INFO 168894 --- [backend] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2025-05-27T23:00:58.886+05:30  INFO 168894 --- [backend] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-05-27T23:00:58.888+05:30  INFO 168894 --- [backend] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-05-27T23:00:58.891+05:30  INFO 168894 --- [backend] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
