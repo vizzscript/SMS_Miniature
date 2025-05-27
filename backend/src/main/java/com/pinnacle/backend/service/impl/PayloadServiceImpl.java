@@ -1,11 +1,5 @@
 package com.pinnacle.backend.service.impl;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,6 +51,9 @@ public class PayloadServiceImpl implements PayloadService {
 
     @Autowired
     private PrivilegeRepository privilegeRepository;
+
+    // @Autowired
+    // private CustomFinalRepository customFinalRepository;
 
     // @Autowired
     // private ObjectMapper objectMapper; // For JSON conversion
@@ -146,7 +143,6 @@ public class PayloadServiceImpl implements PayloadService {
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Too Many Requests");
             }
 
-
             // Processing Payload
             List<FinalModel> entities = new ArrayList<>();
             try {
@@ -161,7 +157,11 @@ public class PayloadServiceImpl implements PayloadService {
                             if (privilegeList != null && privilegeList.contains("DEDUCT_BALANCE")) {
                                 if (smsBal == null) {
                                     log.error("SMS balance is null for client: {}", client.getUserName());
-                                    throw new IllegalStateException("SMS balance is not set for this client.");
+                                    // throw new IllegalStateException("SMS balance is not set for this client.");
+                                    ResponseEntity.status(401).body(Map.of(
+                                            "status", HttpStatus.UNAUTHORIZED.value(),
+                                            "message", "SMS balance is not set for this client.",
+                                            "timestamp", Instant.now().toString()));
                                 }
                                 smsBal--;
                             }
@@ -178,23 +178,35 @@ public class PayloadServiceImpl implements PayloadService {
                 // Update and save client balance
                 client.setSmsBalance(smsBal);
                 clientRepository.save(client);
-                // Save entities to database
                 finalRepository.saveAll(entities);
                 // If multiple records, write to file
-                if (payloadRequest.getPayload().size() > 1) {
-                    Path filePath = Paths.get("payload_data.txt");
-                    try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardOpenOption.CREATE,
-                            StandardOpenOption.APPEND)) {
-                        writer.write("Sender || Mobile Number || Message");
-                        writer.newLine();
-                        for (FinalModel entity : entities) {
-                            writer.write(entity.getSender() + " || " + entity.getMobileNo() + " || "
-                                    + entity.getMessage());
-                            writer.newLine();
-                        }
-                    }
-                    log.info("File created and data processed successfully!");
-                }
+                // if (payloadRequest.getPayload().size() > 1) {
+                // Path filePath = Paths.get("p.csv");
+                // try (BufferedWriter writer = Files.newBufferedWriter(filePath,
+                // StandardOpenOption.CREATE,
+                // StandardOpenOption.APPEND)) {
+                // String fileContent = entities.stream().map(entity -> entity.getSender() + "
+                // || "
+                // + entity.getMessage() + " || " + entity.getMobileNo())
+                // .collect(Collectors.joining("\n")); // Joining all records with new line
+                // // for (FinalModel entity : entities) {
+                // // writer.write(entity.getSender() + " || " + entity.getMobileNo() + " || "
+                // // + entity.getMessage());
+                // // writer.newLine();
+                // // }
+                // writer.write(fileContent);
+                // writer.newLine();
+
+                // log.info("File created and data processed successfully!");
+                // customFinalRepository.loadFileToDatabase(fileContent.toString());
+
+                // }
+
+                // } else {
+                // // Save entities to database if single record is processing
+                // finalRepository.saveAll(entities);
+                // }
+                
 
                 log.info("Payload processed successfully!");
 
@@ -204,9 +216,10 @@ public class PayloadServiceImpl implements PayloadService {
                         "status", HttpStatus.UNAUTHORIZED.value(),
                         "message", "Invalid Data in final model.",
                         "timestamp", Instant.now().toString()));
-            } catch (IOException e) {
-                log.error("Error writing payload data to file.", e);
             }
+            // catch (IOException e) {
+            // log.error("Error writing payload data to file.", e);
+            // }
 
             return ResponseEntity.status(200).body(Map.of(
                     "status", 200,
@@ -221,6 +234,7 @@ public class PayloadServiceImpl implements PayloadService {
             log.info("Processing time: {} ms", stopWatch.getTotalTimeMillis());
         }
     }
+
 }
 
 // if(HeaderValidationUtil.validateContentLength(encryptedPayload) != null){
